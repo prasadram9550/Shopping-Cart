@@ -1,8 +1,5 @@
 package com.rr.controllers;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,33 +10,34 @@ import com.rr.globaldata.GlobalData;
 import com.rr.model.Product;
 import com.rr.service.ProductService;
 
-import jakarta.servlet.http.HttpSession;
-
 @Controller
 public class CartController {
-	@Autowired
-	ProductService productService;
-	 
-	   @GetMapping("/addToCart/{id}")
-	    public String addToCart(@PathVariable int id, HttpSession session) {
-	        List<Product> cart = (List<Product>) session.getAttribute("cart");
-	        if (cart == null) {
-	            cart = new ArrayList<>();
-	            session.setAttribute("cart", cart);
-	        }
-	        cart.add(productService.getProductById(id).get());
-	        return "redirect:/shop";
-	    }
-	   @GetMapping("/cart")
-	    public String viewCart(Model model, HttpSession session) {
-	        List<Product> cart = (List<Product>) session.getAttribute("cart");
-	        if (cart == null) {
-	            cart = new ArrayList<>();
-	            session.setAttribute("cart", cart);
-	        }
-	        model.addAttribute("cart", cart);
-	        model.addAttribute("cartCount", cart.size());
-	        model.addAttribute("total", cart.stream().mapToDouble(Product::getPrice).sum());
-	        return "cart";
-	    }
+    @Autowired
+    ProductService productService;
+
+    @GetMapping("/addToCart/{id}")
+    public String addToCart(@PathVariable int id) {
+        GlobalData.cart.add(productService.getProductById(id).get());
+        return "redirect:/cart";
+    }
+
+    @GetMapping("/cart")
+    public String cartGet(Model model) {
+        model.addAttribute("cartCount", GlobalData.cart.size());
+        model.addAttribute("total", GlobalData.cart.stream().mapToDouble(Product::getPrice).sum());
+        model.addAttribute("cart", GlobalData.cart);
+        return "cart";
+    }
+
+    @GetMapping("/cart/removeItem/{index}")
+    public String cartItemRemove(@PathVariable int index) {
+        GlobalData.cart.remove(index);
+        return "redirect:/cart";
+    }
+
+    @GetMapping("/checkout")
+    public String checkout(Model model) {
+        model.addAttribute("total", GlobalData.cart.stream().mapToDouble(Product::getPrice).sum());
+        return "checkout";
+    }
 }
